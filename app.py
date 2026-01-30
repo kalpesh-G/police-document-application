@@ -49,6 +49,18 @@ OFFENCE_MAPPING = {
     ]
 }
 
+def get_template_path(filename, section=None):
+    """Get full path to template file, using section if provided"""
+    if section and section in OFFENCE_MAPPING:
+        return os.path.join(TEMPLATE_DIR, section, filename)
+    else:
+        # Try to find which section this file belongs to
+        for sec in OFFENCE_MAPPING:
+            if filename in OFFENCE_MAPPING[sec]:
+                return os.path.join(TEMPLATE_DIR, sec, filename)
+        # Fallback to root (for backwards compatibility)
+        return os.path.join(TEMPLATE_DIR, filename)
+
 # --------------------------------------------------
 # DATA VARIABLES LIST (For validation and cleaning)
 # --------------------------------------------------
@@ -154,8 +166,8 @@ def replace_text_in_paragraph(paragraph, data):
                 for i in range(start_run_idx + 1, end_run_idx + 1):
                     paragraph.runs[i].text = ""
 
-def generate_document(template_name, data, output_path):
-    template_path = os.path.join(TEMPLATE_DIR, template_name)
+def generate_document(template_name, data, output_path, section=None):
+    template_path = get_template_path(template_name, section)
     if not os.path.exists(template_path):
         return False
     
@@ -396,7 +408,7 @@ def documents():
     # 3. Check for Missing Data (only placeholders used in selected templates)
     required_in_docs = set()
     for filename in doc_list:
-        template_path = os.path.join(TEMPLATE_DIR, filename)
+        template_path = get_template_path(filename, section)
         required_in_docs.update(extract_placeholders_from_docx(template_path))
 
     missing_fields = [f for f in REQUIRED_FIELDS if f in required_in_docs and not data.get(f)]
@@ -410,9 +422,10 @@ def documents():
 @app.route('/download_single/<filename>')
 def download_single(filename):
     data = load_data()
+    section = data.get('offence_section', 'GENERAL')
     output_path = os.path.join(GENERATED_DIR, f"Filled_{filename}")
     
-    success = generate_document(filename, data, output_path)
+    success = generate_document(filename, data, output_path, section)
     if success:
         @after_this_request
         def cleanup(response):
@@ -427,10 +440,11 @@ def download_single(filename):
 @app.route('/download_single_pdf/<filename>')
 def download_single_pdf(filename):
     data = load_data()
+    section = data.get('offence_section', 'GENERAL')
     output_docx = os.path.join(GENERATED_DIR, f"Filled_{filename}")
     output_pdf = os.path.join(GENERATED_DIR, f"Filled_{os.path.splitext(filename)[0]}.pdf")
 
-    success = generate_document(filename, data, output_docx)
+    success = generate_document(filename, data, output_docx, section)
     if not success:
         return "Template not found", 404
 
@@ -459,7 +473,7 @@ def download_all_zip():
         for filename in doc_list:
             output_name = f"Filled_{filename}"
             output_path = os.path.join(GENERATED_DIR, output_name)
-            if generate_document(filename, data, output_path):
+            if generate_document(filename, data, output_path, section):
                 zipf.write(output_path, arcname=output_name)
                 generated_files.append(output_path)
     
@@ -489,7 +503,7 @@ def download_all_pdf_zip():
         for filename in doc_list:
             output_docx = os.path.join(GENERATED_DIR, f"Filled_{filename}")
             output_pdf = os.path.join(GENERATED_DIR, f"Filled_{os.path.splitext(filename)[0]}.pdf")
-            if generate_document(filename, data, output_docx):
+            if generate_document(filename, data, output_docx, section):
                 if generate_pdf_from_docx(output_docx, output_pdf):
                     zipf.write(output_pdf, arcname=os.path.basename(output_pdf))
                     generated_files.extend([output_docx, output_pdf])
@@ -519,7 +533,7 @@ def download_merged():
 
     # Generate first document as base
     base_path = os.path.join(GENERATED_DIR, "Merged_Master.docx")
-    generate_document(doc_list[0], data, base_path)
+    generate_document(doc_list[0], data, base_path, section)
     
     master_doc = Document(base_path)
     composer = Composer(master_doc)
@@ -528,7 +542,7 @@ def download_merged():
     temp_files = []
     for filename in doc_list[1:]:
         temp_path = os.path.join(GENERATED_DIR, f"temp_{filename}")
-        generate_document(filename, data, temp_path)
+        generate_document(filename, data, temp_path, section)
         doc_to_append = Document(temp_path)
         master_doc.add_page_break()
         composer.append(doc_to_append)
@@ -560,7 +574,7 @@ def download_merged_pdf():
         return "No documents to merge", 400
 
     base_path = os.path.join(GENERATED_DIR, "Merged_Master.docx")
-    generate_document(doc_list[0], data, base_path)
+    generate_document(doc_list[0], data, base_path, section)
 
     master_doc = Document(base_path)
     composer = Composer(master_doc)
@@ -568,7 +582,7 @@ def download_merged_pdf():
     temp_files = []
     for filename in doc_list[1:]:
         temp_path = os.path.join(GENERATED_DIR, f"temp_{filename}")
-        generate_document(filename, data, temp_path)
+        generate_document(filename, data, temp_path, section)
         doc_to_append = Document(temp_path)
         master_doc.add_page_break()
         composer.append(doc_to_append)
@@ -598,7 +612,8 @@ def download_merged_pdf():
 @app.route('/preview/<filename>')
 def preview_document(filename):
     data = load_data()
-    template_path = os.path.join(TEMPLATE_DIR, filename)
+    section = data.get('offence_section', 'GENERAL')
+    template_path = get_template_path(filename, section)
     
     if not os.path.exists(template_path):
         return "Template not found", 404
@@ -614,7 +629,7 @@ def preview_merged():
     
     merged_html = ""
     for filename in doc_list:
-        template_path = os.path.join(TEMPLATE_DIR, filename)
+        template_path = get_template_path(filename, section)
         if os.path.exists(template_path):
             merged_html += f"<div style='page-break-after: always; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #ccc;'>"
             merged_html += f"<h4 style='color: #003366; margin-bottom: 15px;'>📄 {filename}</h4>"
