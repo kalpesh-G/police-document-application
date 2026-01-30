@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <title>Police Document System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; }
+        .sidebar { height: 95vh; overflow-y: auto; background: white; padding: 20px; border-right: 2px solid #ddd; }
+        .preview-pane { height: 95vh; overflow-y: auto; background: #e9ecef; padding: 20px; }
+        .preview-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        label { font-weight: bold; font-size: 0.9rem; margin-top: 10px; color: #333; }
+        .section-header { background: #003366; color: white; padding: 5px 10px; margin-top: 20px; margin-bottom: 15px; border-radius: 4px; }
+    </style>
+    <script>
+        function updatePreview(id, val) {
+            let el = document.getElementById('prev_' + id);
+            if (el) el.innerText = val ? val : '[ ખાલી ]';
+        }
+
+        // localStorage sync
+        function loadFromLocalStorage() {
+            let saved = localStorage.getItem('case_data');
+            if (saved) {
+                let data = JSON.parse(saved);
+                for (let key in data) {
+                    let input = document.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        input.value = data[key];
+                        updatePreview(key, data[key]);
+                    }
+                }
+            }
+        }
+
+        function saveToLocalStorage() {
+            let data = {};
+            document.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.name) data[el.name] = el.value;
+            });
+            localStorage.setItem('case_data', JSON.stringify(data));
+            fetch('/api/save_data', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+
+        window.addEventListener('load', loadFromLocalStorage);
+        document.addEventListener('change', saveToLocalStorage);
+        document.addEventListener('input', saveToLocalStorage);
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-7 sidebar">
+            <h3 class="text-center text-primary mb-4">પોલીસ દસ્તાવેજ જનરેટર</h3>
+            <form action="/" method="POST">
+                
+                <div class="section-header">આરોપીની વિગત (Accused Details)</div>
+                <div class="row">
+                    <div class="col-md-6"><label>નામ (Name)</label><input type="text" name="acc_name" class="form-control" value="{{ data.acc_name }}" oninput="updatePreview('acc_name', this.value)"></div>
+                    <div class="col-md-6"><label>પિતાનું નામ (Father)</label><input type="text" name="acc_father" class="form-control" value="{{ data.acc_father }}" oninput="updatePreview('acc_father', this.value)"></div>
+                    <div class="col-md-6"><label>અટક (Surname)</label><input type="text" name="acc_surname" class="form-control" value="{{ data.acc_surname }}" oninput="updatePreview('acc_surname', this.value)"></div>
+                    <div class="col-md-6"><label>ઉપનામ (Alias)</label><input type="text" name="acc_alias" class="form-control" value="{{ data.acc_alias }}" oninput="updatePreview('acc_alias', this.value)"></div>
+                    <div class="col-md-4"><label>જાતિ (Gender)</label><select name="acc_gender" class="form-control"><option value="Male">પુરૂષ</option><option value="Female">સ્ત્રી</option></select></div>
+                    <div class="col-md-4"><label>ઉંમર (Age)</label><input type="text" name="acc_age" class="form-control" value="{{ data.acc_age }}" oninput="updatePreview('acc_age', this.value)"></div>
+                    <div class="col-md-4"><label>જન્મ તારીખ (DOB)</label><input type="date" name="acc_dob" class="form-control" value="{{ data.acc_dob }}"></div>
+                    <div class="col-md-4"><label>ધર્મ (Religion)</label><input type="text" name="acc_religion" class="form-control" value="{{ data.acc_religion }}"></div>
+                    <div class="col-md-4"><label>જ્ઞાતિ (Caste)</label><input type="text" name="acc_caste" class="form-control" value="{{ data.acc_caste }}"></div>
+                    <div class="col-md-4"><label>પેટા જ્ઞાતિ</label><input type="text" name="acc_subcaste" class="form-control" value="{{ data.acc_subcaste }}"></div>
+                    <div class="col-md-4"><label>રાષ્ટ્રીયતા (Nationality)</label><input type="text" name="acc_nationality" class="form-control" value="{{ data.acc_nationality }}"></div>
+                    <div class="col-md-4"><label>વૈવાહિક સ્થિતિ (Marital Status)</label><input type="text" name="acc_marital" class="form-control" value="{{ data.acc_marital }}"></div>
+                </div>
+
+                <div class="section-header">વ્યવસાય (Occupation)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>ધંધો (Occupation Type)</label><input type="text" name="occ_type" class="form-control" value="{{ data.occ_type }}"></div>
+                    <div class="col-md-4"><label>ધંધાનું સ્થળ (Place of Work)</label><input type="text" name="occ_place" class="form-control" value="{{ data.occ_place }}"></div>
+                    <div class="col-md-4"><label>આવક (Income)</label><input type="text" name="occ_income" class="form-control" value="{{ data.occ_income }}"></div>
+                </div>
+
+                <div class="section-header">કાયમી સરનામું (Permanent Address)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>મકાન નં (House No)</label><input type="text" name="perm_house" class="form-control" value="{{ data.perm_house }}"></div>
+                    <div class="col-md-4"><label>વિસ્તાર (Area)</label><input type="text" name="perm_area" class="form-control" value="{{ data.perm_area }}"></div>
+                    <div class="col-md-4"><label>ગામ (Village)</label><input type="text" name="perm_village" class="form-control" value="{{ data.perm_village }}"></div>
+                    <div class="col-md-4"><label>તાલુકો (Taluka)</label><input type="text" name="perm_taluka" class="form-control" value="{{ data.perm_taluka }}"></div>
+                    <div class="col-md-4"><label>જિલ્લો (District)</label><input type="text" name="perm_district" class="form-control" value="{{ data.perm_district }}"></div>
+                    <div class="col-md-4"><label>રાજ્ય (State)</label><input type="text" name="perm_state" class="form-control" value="{{ data.perm_state }}"></div>
+                    <div class="col-md-4"><label>પિનકોડ (Pincode)</label><input type="text" name="perm_pin" class="form-control" value="{{ data.perm_pin }}"></div>
+                </div>
+
+                <div class="section-header">હાલનું સરનામું (Current Address)</div>
+                <div class="row">
+                    <div class="col-md-12"><label>હાલનું સરનામું (Full Current Address)</label><input type="text" name="curr_address" class="form-control" value="{{ data.curr_address }}"></div>
+                    <div class="col-md-4"><label>શહેર/ગામ (City/Village)</label><input type="text" name="curr_city" class="form-control" value="{{ data.curr_city }}"></div>
+                    <div class="col-md-4"><label>તાલુકો (Taluka)</label><input type="text" name="curr_taluka" class="form-control" value="{{ data.curr_taluka }}"></div>
+                    <div class="col-md-4"><label>જિલ્લો (District)</label><input type="text" name="curr_district" class="form-control" value="{{ data.curr_district }}"></div>
+                    <div class="col-md-4"><label>રાજ્ય (State)</label><input type="text" name="curr_state" class="form-control" value="{{ data.curr_state }}"></div>
+                    <div class="col-md-4"><label>પિનકોડ (Pincode)</label><input type="text" name="curr_pin" class="form-control" value="{{ data.curr_pin }}"></div>
+                </div>
+
+                <div class="section-header">સંપર્ક અને ઓળખ (Contact & ID)</div>
+                <div class="row">
+                    <div class="col-md-6"><label>મોબાઈલ ૧ (Primary Mobile)</label><input type="text" name="mobile_1" class="form-control" value="{{ data.mobile_1 }}"></div>
+                    <div class="col-md-6"><label>મોબાઈલ ૨ (Alt Mobile)</label><input type="text" name="mobile_2" class="form-control" value="{{ data.mobile_2 }}"></div>
+                    <div class="col-md-6"><label>ઓળખ પત્ર પ્રકાર (ID Type)</label><input type="text" name="id_type" class="form-control" value="{{ data.id_type }}"></div>
+                    <div class="col-md-6"><label>ઓળખ પત્ર નંબર (ID Number)</label><input type="text" name="id_number" class="form-control" value="{{ data.id_number }}"></div>
+                </div>
+
+                <div class="section-header">શારીરિક વર્ણન (Physical Description)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>ઊંચાઈ (Height)</label><input type="text" name="phy_height" class="form-control" value="{{ data.phy_height }}"></div>
+                    <div class="col-md-4"><label>બાંધો (Build)</label><input type="text" name="phy_build" class="form-control" value="{{ data.phy_build }}"></div>
+                    <div class="col-md-4"><label>વર્ણ/રંગ (Complexion)</label><input type="text" name="phy_complexion" class="form-control" value="{{ data.phy_complexion }}"></div>
+                    <div class="col-md-4"><label>આંખો (Eye Color)</label><input type="text" name="phy_eyes" class="form-control" value="{{ data.phy_eyes }}"></div>
+                    <div class="col-md-4"><label>વાળ (Hair Color)</label><input type="text" name="phy_hair" class="form-control" value="{{ data.phy_hair }}"></div>
+                    <div class="col-md-4"><label>મૂછ/દાઢી (Beard/Mustache)</label><input type="text" name="phy_facial_hair" class="form-control" value="{{ data.phy_facial_hair }}"></div>
+                </div>
+
+                <div class="section-header">નિશાન (Marks)</div>
+                <div class="row">
+                    <div class="col-md-6"><label>નિશાન ૧ (Id Mark 1)</label><input type="text" name="mark_1" class="form-control" value="{{ data.mark_1 }}"></div>
+                    <div class="col-md-6"><label>નિશાન ૨ (Id Mark 2)</label><input type="text" name="mark_2" class="form-control" value="{{ data.mark_2 }}"></div>
+                    <div class="col-md-6"><label>જુના ઘા (Old Wounds)</label><input type="text" name="old_wounds" class="form-control" value="{{ data.old_wounds }}"></div>
+                    <div class="col-md-6"><label>અન્ય ઓળખ (Other Marks)</label><input type="text" name="other_id_marks" class="form-control" value="{{ data.other_id_marks }}"></div>
+                </div>
+
+                <div class="section-header">સગાને જાણ (Relative Intimation)</div>
+                <div class="row">
+                    <div class="col-md-6"><label>સગાનું નામ (Relative Name)</label><input type="text" name="rel_name" class="form-control" value="{{ data.rel_name }}"></div>
+                    <div class="col-md-6"><label>સંબંધ (Relation)</label><input type="text" name="rel_relation" class="form-control" value="{{ data.rel_relation }}"></div>
+                    <div class="col-md-6"><label>મોબાઈલ (Relative Mobile)</label><input type="text" name="rel_mobile" class="form-control" value="{{ data.rel_mobile }}"></div>
+                    <div class="col-md-6"><label>સરનામું (Relative Address)</label><input type="text" name="rel_address" class="form-control" value="{{ data.rel_address }}"></div>
+                </div>
+
+                <div class="section-header">ગુનાની વિગત (Case Details)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>પોલીસ સ્ટેશન (PS)</label><input type="text" name="case_ps" class="form-control" value="{{ data.case_ps }}" oninput="updatePreview('case_ps', this.value)"></div>
+                    <div class="col-md-4"><label>જિલ્લો (District)</label><input type="text" name="case_district" class="form-control" value="{{ data.case_district }}"></div>
+                    <div class="col-md-4"><label>તાલુકો (Taluka)</label><input type="text" name="case_taluka" class="form-control" value="{{ data.case_taluka }}"></div>
+                    <div class="col-md-4"><label>ગુના રજી. નં (Crime No)</label><input type="text" name="crime_no" class="form-control" value="{{ data.crime_no }}" oninput="updatePreview('crime_no', this.value)"></div>
+                    <div class="col-md-4"><label>ગુના પ્રકાર (Crime Type)</label><input type="text" name="crime_type" class="form-control" value="{{ data.crime_type }}"></div>
+                    <div class="col-md-4"><label>વર્ષ (Year)</label><input type="text" name="crime_year" class="form-control" value="{{ data.crime_year }}"></div>
+                    
+                    <div class="col-md-4" style="background: #fff3cd; padding: 5px; border: 1px solid #ffeeba;">
+                        <label class="text-danger">લાગુ કલમ (Offence Section)*</label>
+                        <select name="offence_section" class="form-control" onchange="updatePreview('offence_section', this.value)">
+                            <option value="281" {% if data.offence_section == '281' %}selected{% endif %}>281 (BNS)</option>
+                            <option value="302" {% if data.offence_section == '302' %}selected{% endif %}>302 (Murder)</option>
+                            <option value="379" {% if data.offence_section == '379' %}selected{% endif %}>379 (Theft)</option>
+                            <option value="Other" {% if data.offence_section == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12"><label>ગુનાનું વર્ણન (Desc)</label><textarea name="offence_desc" class="form-control">{{ data.offence_desc }}</textarea></div>
+                    <div class="col-md-6"><label>તારીખ (Offence Date)</label><input type="date" name="offence_date" class="form-control" value="{{ data.offence_date }}"></div>
+                    <div class="col-md-6"><label>જગ્યા (Place)</label><input type="text" name="offence_place" class="form-control" value="{{ data.offence_place }}"></div>
+                    <div class="col-md-6"><label>સમય (Offence Time)</label><input type="text" name="offence_time" class="form-control" value="{{ data.offence_time }}"></div>
+                </div>
+
+                <div class="section-header">અટકાયત (Arrest)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>અટકાયત છે? (Is Arrested)</label><input type="text" name="is_arrested" class="form-control" value="{{ data.is_arrested }}"></div>
+                    <div class="col-md-4"><label>અટકાયત તારીખ (Arrest Date)</label><input type="date" name="arrest_date" class="form-control" value="{{ data.arrest_date }}"></div>
+                    <div class="col-md-4"><label>અટકાયત સમય (Arrest Time)</label><input type="text" name="arrest_time" class="form-control" value="{{ data.arrest_time }}"></div>
+                    <div class="col-md-6"><label>અટકાયત સ્થળ (Place of Arrest)</label><input type="text" name="arrest_place" class="form-control" value="{{ data.arrest_place }}"></div>
+                    <div class="col-md-6"><label>સ્ટેશન ડાયરી એન્ટ્રી (Entry No)</label><input type="text" name="arrest_entry_no" class="form-control" value="{{ data.arrest_entry_no }}"></div>
+                </div>
+
+                <div class="section-header">જામીન (Bail)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>જામીન પર? (Is Bailed)</label><input type="text" name="is_bailed" class="form-control" value="{{ data.is_bailed }}"></div>
+                    <div class="col-md-4"><label>જામીન આપનાર (Authority)</label><input type="text" name="bail_authority" class="form-control" value="{{ data.bail_authority }}"></div>
+                    <div class="col-md-4"><label>જામીન તારીખ (Bail Date)</label><input type="date" name="bail_date" class="form-control" value="{{ data.bail_date }}"></div>
+                    <div class="col-md-4"><label>જામીન સમય (Bail Time)</label><input type="text" name="bail_time" class="form-control" value="{{ data.bail_time }}"></div>
+                    <div class="col-md-8"><label>શરતો (Conditions)</label><input type="text" name="bail_conditions" class="form-control" value="{{ data.bail_conditions }}"></div>
+                </div>
+
+                <div class="section-header">કેસ સ્થિતિ અને જાણ (Status & Intimation)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>સ્થિતિ (પ્રમાણિત)</label><input type="text" name="status_proven" class="form-control" value="{{ data.status_proven }}"></div>
+                    <div class="col-md-4"><label>ચાર્જશીટ સ્થિતિ</label><input type="text" name="status_chargesheet" class="form-control" value="{{ data.status_chargesheet }}"></div>
+                    <div class="col-md-4"><label>કેસ સ્થિતિ</label><input type="text" name="status_case" class="form-control" value="{{ data.status_case }}"></div>
+                    <div class="col-md-4"><label>રિલીઝ તારીખ</label><input type="date" name="status_release_date" class="form-control" value="{{ data.status_release_date }}"></div>
+                    <div class="col-md-4"><label>સૂચના રીત</label><input type="text" name="intimation_method" class="form-control" value="{{ data.intimation_method }}"></div>
+                    <div class="col-md-4"><label>સૂચના તારીખ</label><input type="date" name="intimation_date" class="form-control" value="{{ data.intimation_date }}"></div>
+                    <div class="col-md-4"><label>સૂચના સમય</label><input type="text" name="intimation_time" class="form-control" value="{{ data.intimation_time }}"></div>
+                    <div class="col-md-4"><label>સૂચના એન્ટ્રી નં</label><input type="text" name="intimation_entry_no" class="form-control" value="{{ data.intimation_entry_no }}"></div>
+                    <div class="col-md-4"><label>સૂચના એન્ટ્રી સમય</label><input type="text" name="intimation_entry_time" class="form-control" value="{{ data.intimation_entry_time }}"></div>
+                </div>
+
+                <div class="section-header">તપાસ કરનાર અમલદાર (IO)</div>
+                <div class="row">
+                    <div class="col-md-6"><label>IO નામ</label><input type="text" name="io_name" class="form-control" value="{{ data.io_name }}" oninput="updatePreview('io_name', this.value)"></div>
+                    <div class="col-md-6"><label>હોદ્દો (Designation)</label><input type="text" name="io_designation" class="form-control" value="{{ data.io_designation }}"></div>
+                    <div class="col-md-6"><label>બકલ નંબર (Buckle No)</label><input type="text" name="io_buckle" class="form-control" value="{{ data.io_buckle }}"></div>
+                    <div class="col-md-6"><label>પોલીસ સ્ટેશન (IO Police Station)</label><input type="text" name="io_police_station" class="form-control" value="{{ data.io_police_station }}"></div>
+                    <div class="col-md-12"><label>નોંધ/શેરો (Remarks)</label><textarea name="remarks" class="form-control">{{ data.remarks }}</textarea></div>
+                </div>
+
+                <div class="section-header">પ્રમાણિત (Authentication)</div>
+                <div class="row">
+                    <div class="col-md-4"><label>દસ્તાવેજ તારીખ (Date)</label><input type="date" name="auth_date" class="form-control" value="{{ data.auth_date }}"></div>
+                    <div class="col-md-4"><label>સ્થળ (Place)</label><input type="text" name="auth_place" class="form-control" value="{{ data.auth_place }}"></div>
+                    <div class="col-md-4"><label>પ્રિન્ટ નામ (Name for Signature)</label><input type="text" name="auth_print_name" class="form-control" value="{{ data.auth_print_name }}"></div>
+                </div>
+
+                <div class="mt-4 d-grid gap-2">
+                    <button type="submit" name="save" class="btn btn-secondary">ફક્ત સેવ કરો (Save Draft)</button>
+                    <button type="submit" name="proceed" class="btn btn-success btn-lg">સેવ અને આગળ વધો (Save & Proceed) >></button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-5 preview-pane">
+            <h4 class="text-center mb-3">Live Data Preview</h4>
+            <div class="preview-card">
+                <strong>આરોપી:</strong> <span id="prev_acc_name">{{ data.acc_name }}</span> <span id="prev_acc_father">{{ data.acc_father }}</span> <span id="prev_acc_surname">{{ data.acc_surname }}</span> <br>
+                <small>ઉપનામ: <span id="prev_acc_alias">{{ data.acc_alias }}</span></small>
+            </div>
+            <div class="preview-card">
+                <strong>ઉંમર:</strong> <span id="prev_acc_age">{{ data.acc_age }}</span>
+            </div>
+            <div class="preview-card" style="border-left: 5px solid red;">
+                <strong>ગુનો (Case):</strong> <br>
+                PS: <span id="prev_case_ps">{{ data.case_ps }}</span> <br>
+                CR No: <span id="prev_crime_no">{{ data.crime_no }}</span> <br>
+                <strong>SECTION:</strong> <span id="prev_offence_section">{{ data.offence_section }}</span>
+            </div>
+            <div class="preview-card">
+                <strong>IO:</strong> <span id="prev_io_name">{{ data.io_name }}</span>
+            </div>
+            <div class="alert alert-info">
+                This preview shows raw data. Document formatting happens on the next page.
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

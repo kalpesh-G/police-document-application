@@ -1,0 +1,8 @@
+py_env/
+__pycache__/
+*.pyc
+generated_docs/
+data/
+.git/
+.vscode/
+*.log
