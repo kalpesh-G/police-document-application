@@ -31,7 +31,7 @@ GENERATED_DIR = tempfile.gettempdir()
 # --------------------------------------------------
 OFFENCE_MAPPING = {
     "281": [
-        "Arrest_Memo_281.docx",
+        "Arrest_memo_281.docx",
         "Bail_Bond_281.docx",
         "Notice_281.docx"
     ],
